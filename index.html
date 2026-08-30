@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Afinador y Transpositor</title>
-  <meta name="theme-color" content="#f5f0e8">
+  <meta name="theme-color" content="#1a1a1a">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <style>
     * {
@@ -17,7 +17,7 @@
     }
 
     body {
-      background: #f5f0e8;
+      background: #1a1a1a;
       min-height: 100vh;
       min-height: 100dvh;
       display: flex;
@@ -26,21 +26,20 @@
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       padding: 0.5rem;
       touch-action: manipulation;
-      color: #2d2a24;
+      color: #e0e0e0;
       line-height: 1.4;
     }
 
     .app-card {
       max-width: 600px;
       width: 100%;
-      background: #f5f0e8;
+      background: #1a1a1a;
       padding: 1rem 0.8rem 1.5rem;
     }
 
-    /* Pestañas simples */
     .tab-navigation {
       display: flex;
-      background: #e8e0d5;
+      background: #2a2a2a;
       padding: 0.2rem;
       border-radius: 0.75rem;
       margin-bottom: 1.5rem;
@@ -55,15 +54,15 @@
       border-radius: 0.6rem;
       font-weight: 600;
       font-size: 1.1rem;
-      color: #6b6259;
+      color: #a0a0a0;
       cursor: pointer;
       transition: background 0.15s;
       font-family: inherit;
     }
 
     .tab-btn.active {
-      background: #ffffff;
-      color: #2d2a24;
+      background: #3a3a3a;
+      color: #ffffff;
     }
 
     .tab-content {
@@ -74,9 +73,8 @@
       display: block;
     }
 
-    /* Controles grandes y claros */
     .btn-group {
-      background: #e8e0d5;
+      background: #2a2a2a;
       padding: 0.2rem;
       border-radius: 0.75rem;
       display: flex;
@@ -90,20 +88,20 @@
       border-radius: 0.6rem;
       font-weight: 600;
       font-size: 1rem;
-      color: #6b6259;
+      color: #a0a0a0;
       cursor: pointer;
       transition: background 0.15s;
       font-family: inherit;
     }
 
     .btn-group button.active {
-      background: #ffffff;
-      color: #2d2a24;
+      background: #3a3a3a;
+      color: #ffffff;
     }
 
     .action-btn {
-      background: #d9cdbc;
-      color: #2d2a24;
+      background: #3a3a3a;
+      color: #ffffff;
       border: none;
       padding: 0.9rem 1.8rem;
       border-radius: 0.75rem;
@@ -116,15 +114,14 @@
     }
 
     .action-btn:active {
-      background: #c9bda8;
+      background: #4a4a4a;
     }
 
     .action-btn.listening {
-      background: #d4a0a0;
-      color: #3a1f1f;
+      background: #5a3a3a;
+      color: #ffd0d0;
     }
 
-    /* Afinador */
     .tuner-header {
       display: flex;
       align-items: center;
@@ -137,7 +134,7 @@
     .tuner-header h1, .section-title {
       font-weight: 700;
       font-size: 1.6rem;
-      color: #2d2a24;
+      color: #ffffff;
       user-select: none;
     }
 
@@ -151,7 +148,7 @@
     }
 
     .note-display {
-      background: #ffffff;
+      background: #2a2a2a;
       border-radius: 0.75rem;
       padding: 1rem 1.5rem;
       margin-bottom: 1rem;
@@ -163,7 +160,7 @@
     .note-name {
       font-size: 3.5rem;
       font-weight: 700;
-      color: #2d2a24;
+      color: #ffffff;
       min-width: 4.5rem;
       user-select: none;
       line-height: 1;
@@ -172,33 +169,32 @@
     .note-frequency {
       font-size: 1.1rem;
       font-weight: 600;
-      color: #6b6259;
-      background: #e8e0d5;
+      color: #c0c0c0;
+      background: #3a3a3a;
       padding: 0.5rem 1rem;
       border-radius: 0.5rem;
       user-select: none;
     }
 
     .tuner-bar-wrapper {
-      background: #ffffff;
+      background: #2a2a2a;
       border-radius: 0.75rem;
       height: 1.5rem;
       margin: 1rem 0 0.5rem;
       position: relative;
       overflow: hidden;
-      border: 2px solid #e8e0d5;
     }
 
     .tuner-bar-fill {
       height: 100%;
       width: 50%;
-      background: #d9cdbc;
+      background: #5a5a5a;
       border-radius: 0.6rem;
       transition: width 0.1s ease-out, background 0.3s;
     }
 
     .tuner-bar-fill.in-tune {
-      background: #8ab87a;
+      background: #6a9a6a;
     }
 
     .cent-indicator {
@@ -206,7 +202,7 @@
       justify-content: space-between;
       font-size: 0.9rem;
       font-weight: 600;
-      color: #6b6259;
+      color: #a0a0a0;
       padding: 0 0.2rem;
       user-select: none;
     }
@@ -215,8 +211,8 @@
       text-align: center;
       font-size: 1.4rem;
       font-weight: 700;
-      color: #2d2a24;
-      background: #ffffff;
+      color: #ffffff;
+      background: #2a2a2a;
       padding: 0.3rem 1rem;
       border-radius: 0.5rem;
       display: inline-block;
@@ -225,7 +221,7 @@
     }
 
     .cent-value.in-tune {
-      color: #4a7a4a;
+      color: #8ab87a;
     }
 
     .cent-container {
@@ -242,15 +238,15 @@
     }
 
     .string-btn {
-      background: #ffffff;
-      border: 2px solid #e8e0d5;
+      background: #2a2a2a;
+      border: none;
       border-radius: 0.75rem;
       padding: 0.8rem 0.3rem;
       font-weight: 700;
       font-size: 1.1rem;
-      color: #6b6259;
+      color: #c0c0c0;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background 0.15s;
       font-family: inherit;
       text-align: center;
       pointer-events: none;
@@ -262,16 +258,15 @@
     }
 
     .string-btn.active-string {
-      background: #d9cdbc;
-      border-color: #b8a890;
-      color: #2d2a24;
+      background: #3a3a3a;
+      color: #ffffff;
     }
 
     .string-btn .string-note {
       display: block;
       font-size: 0.75rem;
       font-weight: 500;
-      color: #8b8074;
+      color: #8a8a8a;
       margin-top: 0.2rem;
     }
 
@@ -279,8 +274,8 @@
       text-align: center;
       margin-top: 1.2rem;
       font-weight: 600;
-      color: #6b6259;
-      background: #ffffff;
+      color: #c0c0c0;
+      background: #2a2a2a;
       padding: 0.8rem 1rem;
       border-radius: 0.75rem;
       font-size: 1rem;
@@ -288,7 +283,6 @@
       min-height: 2.5rem;
     }
 
-    /* Transpositor */
     .form-group {
       margin-bottom: 1rem;
     }
@@ -297,26 +291,26 @@
       display: block;
       font-size: 1rem;
       font-weight: 700;
-      color: #6b6259;
+      color: #c0c0c0;
       margin-bottom: 0.4rem;
     }
 
     .form-control {
       width: 100%;
-      background: #ffffff;
-      border: 2px solid #e8e0d5;
+      background: #2a2a2a;
+      border: none;
       border-radius: 0.75rem;
       padding: 0.9rem 1rem;
-      color: #2d2a24;
+      color: #ffffff;
       font-size: 1.1rem;
       font-family: inherit;
       outline: none;
-      transition: border-color 0.2s;
+      transition: background 0.2s;
       min-height: 3rem;
     }
 
     .form-control:focus {
-      border-color: #b8a890;
+      background: #3a3a3a;
     }
 
     textarea.form-control {
@@ -332,8 +326,8 @@
 
     .primary-btn {
       width: 100%;
-      background: #d9cdbc;
-      color: #2d2a24;
+      background: #3a3a3a;
+      color: #ffffff;
       border: none;
       padding: 1rem;
       border-radius: 0.75rem;
@@ -347,18 +341,17 @@
     }
 
     .primary-btn:active {
-      background: #c9bda8;
+      background: #4a4a4a;
     }
 
     .result-box {
       margin-top: 0.8rem;
       padding: 1rem;
-      background: #ffffff;
+      background: #2a2a2a;
       border-radius: 0.75rem;
-      border: 2px solid #e8e0d5;
       font-family: monospace;
       font-size: 1.2rem;
-      color: #4a7a4a;
+      color: #8ab87a;
       white-space: pre-wrap;
       word-wrap: break-word;
       font-weight: 700;
@@ -366,7 +359,6 @@
       line-height: 1.5;
     }
 
-    /* Ajustes para pantallas pequeñas */
     @media (max-width: 480px) {
       .app-card { padding: 0.8rem 0.5rem 1rem; }
       .grid-2 { grid-template-columns: 1fr; }
@@ -380,8 +372,8 @@
 <body>
   <div class="app-card">
     <div class="tab-navigation">
-      <button class="tab-btn active" onclick="switchTab('tunerTab', this)">🎸 Afinador</button>
-      <button class="tab-btn" onclick="switchTab('transposeTab', this)">🎵 Transpositor</button>
+      <button class="tab-btn active" onclick="switchTab('tunerTab', this)">Afinador</button>
+      <button class="tab-btn" onclick="switchTab('transposeTab', this)">Transpositor</button>
     </div>
 
     <div id="tunerTab" class="tab-content active">
@@ -394,7 +386,7 @@
       </div>
 
       <div class="controls-row">
-        <button id="micBtn" class="action-btn">🎤 Activar micrófono</button>
+        <button id="micBtn" class="action-btn">Activar micrófono</button>
         <div class="btn-group" id="modeSelector">
           <button class="active" data-mode="auto">Auto</button>
           <button data-mode="manual">Manual</button>
@@ -462,7 +454,6 @@
   </div>
 
   <script>
-    // --- NAVEGACIÓN DE PESTAÑAS ---
     function switchTab(tabId, element) {
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -471,7 +462,6 @@
       element.classList.add('active');
     }
 
-    // --- LÓGICA DEL TRANSPOSITOR ---
     const notesES = ["Do", "Do#", "Re", "Re#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
     const notesEN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
     
@@ -498,8 +488,8 @@
       toSelect.options.add(new Option(`${note} (${notesEN[i]})`, i));
     });
     
-    fromSelect.selectedIndex = 7;  // Sol
-    toSelect.selectedIndex = 0;    // Do
+    fromSelect.selectedIndex = 7;
+    toSelect.selectedIndex = 0;
 
     function transpose() {
       const from = parseInt(fromSelect.value);
@@ -524,7 +514,6 @@
       document.getElementById('output').innerText = transposed;
     }
 
-    // --- LÓGICA DEL AFINADOR ---
     (function() {
       const GUITAR_STRINGS = [
         { note: 'E', freq: 82.41, label: '6ª' },
@@ -717,7 +706,7 @@
         if (isListening) {
           audioContext.suspend();
           cancelAnimationFrame(animationId);
-          micBtn.textContent = '🎤 Activar micrófono';
+          micBtn.textContent = 'Activar micrófono';
           micBtn.classList.remove('listening');
           statusMsg.textContent = 'Micrófono pausado';
           isListening = false;
@@ -744,7 +733,7 @@
             await audioContext.resume();
           }
 
-          micBtn.textContent = '⏹ Detener';
+          micBtn.textContent = 'Detener';
           micBtn.classList.add('listening');
           statusMsg.textContent = 'Escuchando...';
           isListening = true;
