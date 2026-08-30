@@ -1,4 +1,4 @@
-name: Generar APK Firmado
+name: Generar APK
 
 on:
   push:
@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Actualizado a la última versión (v4.x.x)
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
@@ -20,7 +19,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Actualizado a la última versión (v4.x.x)
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,16 +29,22 @@ jobs:
           mkdir -p www
           cp index.html www/index.html
 
-      - name: Compilar APK
+      - name: Compilar APK con Capacitor e Icono Personalizado
         run: |
           npm init -y
           npm install @capacitor/core@5.7.5 @capacitor/cli@5.7.5 @capacitor/android@5.7.5
           npx cap init "Afinador" "com.afinador.app" --web-dir www
           npx cap add android
 
+          # Inyectar permisos de micrófono en AndroidManifest.xml
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' $MANIFEST
+
           if [ -f "icon.png" ]; then
             sudo apt-get update && sudo apt-get install -y imagemagick
+            
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
+            
             convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
             convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
             convert icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
@@ -55,60 +59,12 @@ jobs:
 
           npx cap sync android
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-          
           cd android
-          
-          # --- GENERAR KEYSTORE (con tu identidad) ---
-          keytool -genkey -v -keystore app/afinador.keystore \
-            -alias afinador \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "sir_.rizz Simoonk" \
-            -storepass 123456 \
-            -keypass 123456
-          
-          # --- CREAR ARCHIVO DE CONFIGURACIÓN DE FIRMA (más robusto) ---
-          cat > app/signing.gradle << 'EOF'
-          android {
-              signingConfigs {
-                  release {
-                      storeFile file("afinador.keystore")
-                      storePassword "123456"
-                      keyAlias "afinador"
-                      keyPassword "123456"
-                  }
-              }
-              buildTypes {
-                  release {
-                      minifyEnabled false
-                      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-                      signingConfig signingConfigs.release
-                  }
-              }
-          }
-          EOF
-          
-          # --- INTEGRAR EL ARCHIVO DE FIRMA EN EL BUILD.GRADLE PRINCIPAL ---
-          # Busca la línea que contiene "android {" y añade una línea para incluir nuestro archivo
-          sed -i "/android {/a apply from: 'signing.gradle'" app/build.gradle
-          
-          # --- COMPILAR ---
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
-          
-          # --- VERIFICAR ---
-          echo "=== APK FIRMADO POR ==="
-          keytool -printcert -jarfile app/build/outputs/apk/release/app-release.apk
+          ./gradlew assembleDebug --no-daemon
 
-      - name: Entregar APK Firmado
+      - name: Entregar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Afinador-APK-Firmado
-          path: android/app/build/outputs/apk/release/app-release.apk
-      
-      - name: Entregar Keystore (¡Guárdalo seguro!)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Keystore-Firma
-          path: android/app/afinador.keystore
+          name: AfinadorPro-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
