@@ -1,4 +1,4 @@
-name: Generar APK
+name: Generar APK Firmado
 
 on:
   push:
@@ -29,22 +29,16 @@ jobs:
           mkdir -p www
           cp index.html www/index.html
 
-      - name: Compilar APK con Capacitor e Icono Personalizado
+      - name: Compilar APK
         run: |
           npm init -y
           npm install @capacitor/core@5.7.5 @capacitor/cli@5.7.5 @capacitor/android@5.7.5
           npx cap init "Afinador" "com.afinador.app" --web-dir www
           npx cap add android
 
-          # Inyectar permisos de micrófono en AndroidManifest.xml
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' $MANIFEST
-
           if [ -f "icon.png" ]; then
             sudo apt-get update && sudo apt-get install -y imagemagick
-            
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
-            
             convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
             convert icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
             convert icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
@@ -59,12 +53,49 @@ jobs:
 
           npx cap sync android
           echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          
           cd android
+          
+          keytool -genkey -v -keystore app/afinador.keystore \
+            -alias afinador \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "sir_.rizz Simoonk" \
+            -storepass 123456 \
+            -keypass 123456
+          
+          sed -i '/android {/a\
+          \    signingConfigs {\
+          \        release {\
+          \            storeFile file("afinador.keystore")\
+          \            storePassword "123456"\
+          \            keyAlias "afinador"\
+          \            keyPassword "123456"\
+          \        }\
+          \    }' app/build.gradle
+          
+          sed -i '/buildTypes {/a\
+              release {\
+                  minifyEnabled false\
+                  proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"\
+                  signingConfig signingConfigs.release\
+              }' app/build.gradle
+          
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
+          
+          echo "=== APK FIRMADO ==="
+          keytool -printcert -jarfile app/build/outputs/apk/release/app-release.apk
 
-      - name: Entregar APK
+      - name: Entregar APK Firmado
         uses: actions/upload-artifact@v4
         with:
-          name: Afinador-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Afinador-APK-Firmado
+          path: android/app/build/outputs/apk/release/app-release.apk
+      
+      - name: Entregar Keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: Keystore-Firma
+          path: android/app/afinador.keystore
