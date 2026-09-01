@@ -131,7 +131,8 @@
       gap: 0.8rem;
     }
 
-    .tuner-header h1, .section-title {
+    .tuner-header h1,
+    .section-title {
       font-weight: 700;
       font-size: 1.6rem;
       color: #ffffff;
@@ -180,7 +181,7 @@
       background: #2a2a2a;
       border-radius: 0.75rem;
       height: 1.5rem;
-      margin: 1rem 0 0.5rem;
+      margin: 0.5rem 0 0.25rem;
       position: relative;
       overflow: hidden;
     }
@@ -190,7 +191,7 @@
       width: 50%;
       background: #5a5a5a;
       border-radius: 0.6rem;
-      transition: width 0.1s ease-out, background 0.3s;
+      transition: width 0.08s ease-out, background 0.2s;
     }
 
     .tuner-bar-fill.in-tune {
@@ -200,7 +201,7 @@
     .cent-indicator {
       display: flex;
       justify-content: space-between;
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: #a0a0a0;
       padding: 0 0.2rem;
@@ -227,7 +228,23 @@
     .cent-container {
       display: flex;
       justify-content: center;
-      margin: 0.5rem 0 1rem;
+      margin: 0.3rem 0 0.8rem;
+    }
+
+    /* Medidor de volumen */
+    .volume-meter {
+      background: #2a2a2a;
+      border-radius: 0.5rem;
+      height: 0.4rem;
+      margin: 0.2rem 0 0.8rem;
+      overflow: hidden;
+    }
+    .volume-meter-fill {
+      height: 100%;
+      width: 0%;
+      background: #6a9a6a;
+      border-radius: 0.5rem;
+      transition: width 0.05s;
     }
 
     .strings-grid {
@@ -246,7 +263,7 @@
       font-size: 1.1rem;
       color: #c0c0c0;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.1s;
       font-family: inherit;
       text-align: center;
       pointer-events: none;
@@ -258,8 +275,9 @@
     }
 
     .string-btn.active-string {
-      background: #3a3a3a;
+      background: #4a4a6a;
       color: #ffffff;
+      box-shadow: 0 0 12px rgba(100, 130, 255, 0.3);
     }
 
     .string-btn .string-note {
@@ -268,6 +286,10 @@
       font-weight: 500;
       color: #8a8a8a;
       margin-top: 0.2rem;
+    }
+
+    .string-btn.active-string .string-note {
+      color: #c0d0ff;
     }
 
     .status-message {
@@ -357,15 +379,51 @@
       font-weight: 700;
       min-height: 60px;
       line-height: 1.5;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: #3a3a3a;
+      border: none;
+      color: #c0c0c0;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .copy-btn:active {
+      background: #4a4a4a;
+    }
+    .copy-btn.copied {
+      color: #8ab87a;
     }
 
     @media (max-width: 480px) {
-      .app-card { padding: 0.8rem 0.5rem 1rem; }
-      .grid-2 { grid-template-columns: 1fr; }
-      .strings-grid { grid-template-columns: repeat(2, 1fr); }
-      .note-name { font-size: 2.8rem; }
-      .tab-btn { font-size: 1rem; padding: 0.8rem 0.4rem; }
-      .action-btn { font-size: 1rem; padding: 0.8rem 1.2rem; }
+      .app-card {
+        padding: 0.8rem 0.5rem 1rem;
+      }
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .strings-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .note-name {
+        font-size: 2.8rem;
+      }
+      .tab-btn {
+        font-size: 1rem;
+        padding: 0.8rem 0.4rem;
+      }
+      .action-btn {
+        font-size: 1rem;
+        padding: 0.8rem 1.2rem;
+      }
     }
   </style>
 </head>
@@ -396,6 +454,11 @@
       <div class="note-display">
         <span class="note-name" id="noteName">–</span>
         <span class="note-frequency" id="noteFreq">0.0 Hz</span>
+      </div>
+
+      <!-- Medidor de volumen -->
+      <div class="volume-meter">
+        <div class="volume-meter-fill" id="volumeFill"></div>
       </div>
 
       <div class="tuner-bar-wrapper">
@@ -448,48 +511,125 @@
 
       <div class="form-group" style="margin-top: 1rem;">
         <label>Resultado</label>
-        <div class="result-box" id="output">Do  Lam  Rem  Sol7</div>
+        <div class="result-box" id="output">
+          Do  Lam  Rem  Sol7
+          <button class="copy-btn" id="copyResultBtn" onclick="copyResult()">Copiar</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
+    // ========== TABS ==========
     function switchTab(tabId, element) {
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      
       document.getElementById(tabId).classList.add('active');
       element.classList.add('active');
     }
 
+    // ========== TRANSPOSITOR MEJORADO ==========
     const notesES = ["Do", "Do#", "Re", "Re#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
     const notesEN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    
+
     const noteMap = {
-      'C':0, 'DO':0,
-      'C#':1, 'DB':1, 'DO#':1, 'REB':1,
-      'D':2, 'RE':2,
-      'D#':3, 'EB':3, 'RE#':3, 'MIB':3,
-      'E':4, 'MI':4,
-      'F':5, 'FA':5,
-      'F#':6, 'GB':6, 'FA#':6, 'SOLB':6,
-      'G':7, 'SOL':7,
-      'G#':8, 'AB':8, 'SOL#':8, 'LAB':8,
-      'A':9, 'LA':9,
-      'A#':10, 'BB':10, 'LA#':10, 'SIB':10,
-      'B':11, 'SI':11
+      'C': 0, 'DO': 0,
+      'C#': 1, 'DB': 1, 'DO#': 1, 'REB': 1,
+      'D': 2, 'RE': 2,
+      'D#': 3, 'EB': 3, 'RE#': 3, 'MIB': 3,
+      'E': 4, 'MI': 4,
+      'F': 5, 'FA': 5,
+      'F#': 6, 'GB': 6, 'FA#': 6, 'SOLB': 6,
+      'G': 7, 'SOL': 7,
+      'G#': 8, 'AB': 8, 'SOL#': 8, 'LAB': 8,
+      'A': 9, 'LA': 9,
+      'A#': 10, 'BB': 10, 'LA#': 10, 'SIB': 10,
+      'B': 11, 'SI': 11
     };
+
+    // Orden de notas para usar en índices
+    const noteNames = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
 
     const fromSelect = document.getElementById('fromKey');
     const toSelect = document.getElementById('toKey');
-    
+
     notesES.forEach((note, i) => {
       fromSelect.options.add(new Option(`${note} (${notesEN[i]})`, i));
       toSelect.options.add(new Option(`${note} (${notesEN[i]})`, i));
     });
-    
-    fromSelect.selectedIndex = 7;
-    toSelect.selectedIndex = 0;
+
+    // Cargar preferencias guardadas
+    function loadPrefs() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('transposePrefs'));
+        if (saved) {
+          fromSelect.value = saved.fromKey !== undefined ? saved.fromKey : 7;
+          toSelect.value = saved.toKey !== undefined ? saved.toKey : 0;
+          document.getElementById('outputFormat').value = saved.format || 'es';
+          document.getElementById('chords').value = saved.chords || 'Sol  Mim  Lam  Re7';
+        } else {
+          fromSelect.selectedIndex = 7;
+          toSelect.selectedIndex = 0;
+        }
+      } catch (e) {
+        fromSelect.selectedIndex = 7;
+        toSelect.selectedIndex = 0;
+      }
+    }
+    loadPrefs();
+
+    function savePrefs() {
+      try {
+        localStorage.setItem('transposePrefs', JSON.stringify({
+          fromKey: parseInt(fromSelect.value),
+          toKey: parseInt(toSelect.value),
+          format: document.getElementById('outputFormat').value,
+          chords: document.getElementById('chords').value
+        }));
+      } catch (e) {}
+    }
+
+    // Transposición inteligente
+    function transposeChord(chord, shift, targetArray) {
+      // Maneja acordes con barra: "C/G" -> ["C", "G"]
+      const parts = chord.split('/').map(p => p.trim());
+      const transposedParts = parts.map(part => {
+        // Extraer raíz y sufijo
+        // La raíz es la primera nota (puede tener # o b) seguida de posibles letras (m, 7, etc.)
+        // Buscamos la raíz más larga posible: ej. "C#m7" -> raíz "C#", sufijo "m7"
+        let root = '';
+        let suffix = '';
+        // Intentar con dos caracteres (sostenido o bemol)
+        if (part.length >= 2) {
+          const two = part.substring(0, 2);
+          // Verificar si dos primeros caracteres forman una nota válida (con # o b)
+          const upperTwo = two.toUpperCase();
+          if (noteMap[upperTwo] !== undefined) {
+            root = two;
+            suffix = part.substring(2);
+          }
+        }
+        if (!root) {
+          // Un solo caracter
+          const one = part.substring(0, 1);
+          const upperOne = one.toUpperCase();
+          if (noteMap[upperOne] !== undefined) {
+            root = one;
+            suffix = part.substring(1);
+          } else {
+            // No se reconoce nota, devolver parte intacta
+            return part;
+          }
+        }
+        const rootUpper = root.toUpperCase();
+        const idx = noteMap[rootUpper];
+        if (idx === undefined) return part; // no debería pasar
+        const newIdx = (idx + shift) % 12;
+        const newRoot = targetArray[newIdx];
+        return newRoot + suffix;
+      });
+      return transposedParts.join('/');
+    }
 
     function transpose() {
       const from = parseInt(fromSelect.value);
@@ -497,23 +637,57 @@
       const shift = (to - from + 12) % 12;
       const format = document.getElementById('outputFormat').value;
       const targetArray = format === 'es' ? notesES : notesEN;
-      
+
       const input = document.getElementById('chords').value;
-      const regex = /(Sol#|Solb|Sol|Do#|Reb|Do|Re#|Mib|Re|Mi|Fa#|Solb|Fa|La#|Sib|Lab|La|Si|C#|Db|C|D#|Eb|D|E|F#|Gb|F|G#|Ab|G|A#|Bb|A|B)/gi;
-      
-      const transposed = input.replace(regex, (match) => {
-        const key = match.toUpperCase();
-        if (noteMap[key] !== undefined) {
-          const originalIdx = noteMap[key];
-          const newIdx = (originalIdx + shift) % 12;
-          return targetArray[newIdx];
-        }
-        return match;
+      // Dividir por espacios, comas o saltos de línea, pero mantener espacios para la salida
+      const tokens = input.split(/(\s+)/); // conserva espacios
+      const transposedTokens = tokens.map(token => {
+        // Si es solo espacio o salto, devolverlo
+        if (/^\s+$/.test(token)) return token;
+        // Intentar transponer cada token como acorde
+        return transposeChord(token, shift, targetArray);
       });
-      
-      document.getElementById('output').innerText = transposed;
+      const result = transposedTokens.join('');
+      document.getElementById('output').innerHTML = result +
+        ' <button class="copy-btn" id="copyResultBtn" onclick="copyResult()">Copiar</button>';
+      savePrefs();
     }
 
+    function copyResult() {
+      const output = document.getElementById('output');
+      // Obtener texto sin el botón
+      const text = output.textContent.replace('Copiar', '').trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyResultBtn');
+        if (btn) {
+          btn.textContent = '¡Copiado!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'Copiar';
+            btn.classList.remove('copied');
+          }, 2000);
+        }
+      }).catch(() => {
+        // Fallback
+        const range = document.createRange();
+        range.selectNode(output);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+        const btn = document.getElementById('copyResultBtn');
+        if (btn) {
+          btn.textContent = '¡Copiado!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'Copiar';
+            btn.classList.remove('copied');
+          }, 2000);
+        }
+      });
+    }
+
+    // ========== AFINADOR MEJORADO ==========
     (function() {
       const GUITAR_STRINGS = [
         { note: 'E', freq: 82.41, label: '6ª' },
@@ -535,7 +709,7 @@
       let currentStrings = GUITAR_STRINGS;
       let tuningMode = 'auto';
       let activeStringIndex = 0;
-      
+
       let audioContext;
       let analyser;
       let microphone;
@@ -553,49 +727,85 @@
       const instrumentBtns = document.querySelectorAll('#instrumentSelector button');
       const modeBtns = document.querySelectorAll('#modeSelector button');
       const micBtn = document.getElementById('micBtn');
+      const volumeFill = document.getElementById('volumeFill');
 
-      function autoCorrelate(buf, sampleRate) {
-        let SIZE = buf.length;
+      // Cargar preferencias de afinador
+      function loadTunerPrefs() {
+        try {
+          const saved = JSON.parse(localStorage.getItem('tunerPrefs'));
+          if (saved) {
+            if (saved.instrument) {
+              currentInstrument = saved.instrument;
+              currentStrings = saved.instrument === 'guitar' ? GUITAR_STRINGS : BASS_STRINGS;
+              instrumentBtns.forEach(b => b.classList.toggle('active', b.dataset.instrument === saved.instrument));
+            }
+            if (saved.mode) {
+              tuningMode = saved.mode;
+              modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === saved.mode));
+            }
+          }
+        } catch (e) {}
+      }
+      loadTunerPrefs();
+
+      function saveTunerPrefs() {
+        try {
+          localStorage.setItem('tunerPrefs', JSON.stringify({
+            instrument: currentInstrument,
+            mode: tuningMode
+          }));
+        } catch (e) {}
+      }
+
+      // Algoritmo YIN mejorado para detección de tono
+      function pitchYin(buf, sampleRate) {
+        const threshold = 0.12;
+        let size = buf.length;
         let rms = 0;
-        
-        for (let i = 0; i < SIZE; i++) {
-          let val = buf[i];
-          rms += val * val;
+        for (let i = 0; i < size; i++) rms += buf[i] * buf[i];
+        rms = Math.sqrt(rms / size);
+        if (rms < 0.005) return -1;
+
+        // Diferencia función
+        let diff = new Float32Array(size);
+        for (let tau = 0; tau < size; tau++) {
+          let sum = 0;
+          for (let i = 0; i < size - tau; i++) {
+            let d = buf[i] - buf[i + tau];
+            sum += d * d;
+          }
+          diff[tau] = sum / (size - tau);
         }
-        rms = Math.sqrt(rms / SIZE);
-        if (rms < 0.01) return -1;
 
-        let r1 = 0, r2 = SIZE - 1, thres = 0.2;
-        for (let i = 0; i < SIZE / 2; i++)
-          if (Math.abs(buf[i]) < thres) { r1 = i; break; }
-        for (let i = 1; i < SIZE / 2; i++)
-          if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
+        // Media acumulativa normalizada
+        let cmnd = new Float32Array(size);
+        cmnd[0] = 1;
+        let runningSum = 0;
+        for (let tau = 1; tau < size; tau++) {
+          runningSum += diff[tau];
+          if (runningSum === 0) { cmnd[tau] = 1; continue; }
+          cmnd[tau] = diff[tau] * tau / runningSum;
+        }
 
-        buf = buf.slice(r1, r2);
-        SIZE = buf.length;
-
-        let c = new Array(SIZE).fill(0);
-        for (let i = 0; i < SIZE; i++)
-          for (let j = 0; j < SIZE - i; j++)
-            c[i] = c[i] + buf[j] * buf[j + i];
-
-        let d = 0; while (c[d] > c[d + 1]) d++;
-        let maxval = -1, maxpos = -1;
-        
-        for (let i = d; i < SIZE; i++) {
-          if (c[i] > maxval) {
-            maxval = c[i];
-            maxpos = i;
+        // Buscar primer tau donde cmnd < threshold
+        for (let tau = 2; tau < size; tau++) {
+          if (cmnd[tau] < threshold) {
+            // Interpolación parabólica
+            let prev = cmnd[tau - 1];
+            let curr = cmnd[tau];
+            let next = cmnd[tau + 1];
+            let a = (prev + next - 2 * curr) / 2;
+            let b = (next - prev) / 2;
+            if (a !== 0) {
+              let tau0 = tau - b / (2 * a);
+              if (tau0 > 0 && tau0 < size) {
+                return sampleRate / tau0;
+              }
+            }
+            return sampleRate / tau;
           }
         }
-        let T0 = maxpos;
-
-        let x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
-        let a = (x1 + x3 - 2 * x2) / 2;
-        let b = (x3 - x1) / 2;
-        if (a) T0 = T0 - b / (2 * a);
-
-        return sampleRate / T0;
+        return -1;
       }
 
       function getCents(freq, targetFreq) {
@@ -606,7 +816,6 @@
         let closest = currentStrings[0];
         let minDiff = Math.abs(freq - closest.freq);
         let index = 0;
-
         for (let i = 1; i < currentStrings.length; i++) {
           let diff = Math.abs(freq - currentStrings[i].freq);
           if (diff < minDiff) {
@@ -618,8 +827,19 @@
         return { string: closest, index: index };
       }
 
-      function updateDisplay(detectedFreq) {
-        if (detectedFreq === -1) return;
+      function updateDisplay(detectedFreq, rms) {
+        // Actualizar medidor de volumen
+        let vol = Math.min(1, rms * 8);
+        volumeFill.style.width = (vol * 100) + '%';
+        volumeFill.style.background = vol > 0.7 ? '#8ab87a' : (vol > 0.3 ? '#c0c0c0' : '#5a5a5a');
+
+        if (detectedFreq === -1 || detectedFreq < 30) {
+          // Sin señal válida
+          if (isListening) {
+            statusMsg.textContent = 'Escuchando... (señal débil)';
+          }
+          return;
+        }
 
         let targetNote, targetFreq, targetIndex;
 
@@ -637,9 +857,9 @@
         const cents = getCents(detectedFreq, targetFreq);
         const clamped = Math.min(50, Math.max(-50, cents));
         const percent = 50 + (clamped / 100) * 50;
-        
+
         tunerBar.style.width = percent + '%';
-        
+
         const isTuned = Math.abs(cents) <= 5;
         if (isTuned) {
           tunerBar.classList.add('in-tune');
@@ -652,6 +872,12 @@
         centValueEl.textContent = (cents > 0 ? '+' : '') + cents;
         noteNameEl.textContent = targetNote;
         noteFreqEl.textContent = detectedFreq.toFixed(1) + ' Hz';
+
+        if (tuningMode === 'auto') {
+          statusMsg.textContent = `Cuerda ${currentStrings[targetIndex].label} (${targetNote})`;
+        } else {
+          statusMsg.textContent = `Afinando cuerda ${currentStrings[activeStringIndex].label} (${targetNote})`;
+        }
       }
 
       function renderStrings() {
@@ -661,15 +887,15 @@
           btn.className = 'string-btn';
           if (idx === activeStringIndex) btn.classList.add('active-string');
           if (tuningMode === 'manual') btn.classList.add('manual-active');
-          
+
           btn.dataset.index = idx;
-          
+
           const noteSpan = document.createElement('span');
           noteSpan.textContent = str.note;
           const labelSpan = document.createElement('span');
           labelSpan.className = 'string-note';
           labelSpan.textContent = str.label + ' ' + str.freq.toFixed(1) + 'Hz';
-          
+
           btn.appendChild(noteSpan);
           btn.appendChild(labelSpan);
 
@@ -681,12 +907,12 @@
 
           stringsContainer.appendChild(btn);
         });
+        // Re-aplicar active string
+        setActiveString(activeStringIndex, false);
       }
 
       function setActiveString(index, updateText = true) {
-        if (index === activeStringIndex) return;
         activeStringIndex = index;
-        
         document.querySelectorAll('.string-btn').forEach((btn, idx) => {
           btn.classList.toggle('active-string', idx === index);
         });
@@ -699,12 +925,15 @@
           centValueEl.textContent = '––';
           tunerBar.classList.remove('in-tune');
           centValueEl.classList.remove('in-tune');
+          statusMsg.textContent = `Seleccionada cuerda ${str.label} (${str.note})`;
         }
       }
 
       async function toggleMicrophone() {
         if (isListening) {
-          audioContext.suspend();
+          if (audioContext && audioContext.state !== 'closed') {
+            await audioContext.suspend();
+          }
           cancelAnimationFrame(animationId);
           micBtn.textContent = 'Activar micrófono';
           micBtn.classList.remove('listening');
@@ -715,22 +944,24 @@
 
         try {
           if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext = new(window.AudioContext || window.webkitAudioContext)();
             analyser = audioContext.createAnalyser();
             analyser.fftSize = bufferSize;
 
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-              audio: { 
-                echoCancellation: false, 
-                autoGainControl: false, 
-                noiseSuppression: false 
-              } 
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: {
+                echoCancellation: false,
+                autoGainControl: false,
+                noiseSuppression: false
+              }
             });
-            
+
             microphone = audioContext.createMediaStreamSource(stream);
             microphone.connect(analyser);
           } else {
-            await audioContext.resume();
+            if (audioContext.state === 'suspended') {
+              await audioContext.resume();
+            }
           }
 
           micBtn.textContent = 'Detener';
@@ -747,10 +978,15 @@
 
       function updatePitch() {
         analyser.getFloatTimeDomainData(buffer);
-        const pitch = autoCorrelate(buffer, audioContext.sampleRate);
-        
-        updateDisplay(pitch);
-        
+        // Calcular RMS para volumen
+        let rms = 0;
+        for (let i = 0; i < buffer.length; i++) rms += buffer[i] * buffer[i];
+        rms = Math.sqrt(rms / buffer.length);
+
+        const pitch = pitchYin(buffer, audioContext.sampleRate);
+
+        updateDisplay(pitch, rms);
+
         if (isListening) {
           animationId = requestAnimationFrame(updatePitch);
         }
@@ -763,20 +999,22 @@
           btn.addEventListener('click', function() {
             const inst = this.dataset.instrument;
             if (inst === currentInstrument) return;
-            
+
             currentInstrument = inst;
             currentStrings = inst === 'guitar' ? GUITAR_STRINGS : BASS_STRINGS;
             activeStringIndex = 0;
-            
+
             instrumentBtns.forEach(b => b.classList.toggle('active', b === this));
             renderStrings();
-            
+
             noteNameEl.textContent = '–';
             noteFreqEl.textContent = '0.0 Hz';
             tunerBar.style.width = '50%';
             centValueEl.textContent = '––';
             tunerBar.classList.remove('in-tune');
             centValueEl.classList.remove('in-tune');
+            volumeFill.style.width = '0%';
+            saveTunerPrefs();
           });
         });
 
@@ -784,19 +1022,22 @@
           btn.addEventListener('click', function() {
             const mode = this.dataset.mode;
             if (mode === tuningMode) return;
-            
+
             tuningMode = mode;
             modeBtns.forEach(b => b.classList.toggle('active', b === this));
-            
-            const strings = document.querySelectorAll('.string-btn');
-            strings.forEach(s => s.classList.toggle('manual-active', mode === 'manual'));
-            
+
+            document.querySelectorAll('.string-btn').forEach(s =>
+              s.classList.toggle('manual-active', mode === 'manual')
+            );
+
             if (mode === 'manual') {
               setActiveString(0, true);
               statusMsg.textContent = 'Toque la cuerda que quiere afinar';
             } else {
               statusMsg.textContent = isListening ? 'Escuchando...' : 'Pulse el botón para empezar';
+              // En auto, buscar la cuerda más cercana al detectar
             }
+            saveTunerPrefs();
           });
         });
 
