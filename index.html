@@ -263,7 +263,7 @@
       font-size: 1.1rem;
       color: #c0c0c0;
       cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
       font-family: inherit;
       text-align: center;
       pointer-events: none;
@@ -280,6 +280,13 @@
       box-shadow: 0 0 12px rgba(100, 130, 255, 0.3);
     }
 
+    /* Botón afinado (morado) */
+    .string-btn.tuned {
+      background: #7a3a7a;
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(200, 100, 255, 0.4);
+    }
+
     .string-btn .string-note {
       display: block;
       font-size: 0.75rem;
@@ -288,8 +295,9 @@
       margin-top: 0.2rem;
     }
 
-    .string-btn.active-string .string-note {
-      color: #c0d0ff;
+    .string-btn.active-string .string-note,
+    .string-btn.tuned .string-note {
+      color: #d0c0ff;
     }
 
     .status-message {
@@ -403,6 +411,30 @@
       color: #8ab87a;
     }
 
+    /* Sección de donación */
+    .donation-section {
+      margin-top: 2rem;
+      text-align: center;
+      border-top: 1px solid #2a2a2a;
+      padding-top: 1.5rem;
+    }
+    .donation-btn {
+      background: #3a2a3a;
+      color: #e0c0e0;
+      border: 1px solid #5a4a5a;
+      padding: 0.8rem 2rem;
+      border-radius: 0.75rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      font-family: inherit;
+    }
+    .donation-btn:active {
+      background: #4a3a4a;
+      border-color: #7a5a7a;
+    }
+
     @media (max-width: 480px) {
       .app-card {
         padding: 0.8rem 0.5rem 1rem;
@@ -440,6 +472,7 @@
         <div class="btn-group" id="instrumentSelector">
           <button class="active" data-instrument="guitar">Guitarra</button>
           <button data-instrument="bass">Bajo</button>
+          <button data-instrument="ukulele">Ukelele</button>
         </div>
       </div>
 
@@ -517,6 +550,11 @@
         </div>
       </div>
     </div>
+
+    <!-- Sección de donación -->
+    <div class="donation-section">
+      <button class="donation-btn" id="donateBtn">❤️ Apoyar el proyecto</button>
+    </div>
   </div>
 
   <script>
@@ -528,7 +566,7 @@
       element.classList.add('active');
     }
 
-    // ========== TRANSPOSITOR MEJORADO ==========
+    // ========== TRANSPOSITOR (sin cambios) ==========
     const notesES = ["Do", "Do#", "Re", "Re#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"];
     const notesEN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
@@ -547,9 +585,6 @@
       'B': 11, 'SI': 11
     };
 
-    // Orden de notas para usar en índices
-    const noteNames = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
-
     const fromSelect = document.getElementById('fromKey');
     const toSelect = document.getElementById('toKey');
 
@@ -558,7 +593,6 @@
       toSelect.options.add(new Option(`${note} (${notesEN[i]})`, i));
     });
 
-    // Cargar preferencias guardadas
     function loadPrefs() {
       try {
         const saved = JSON.parse(localStorage.getItem('transposePrefs'));
@@ -589,20 +623,13 @@
       } catch (e) {}
     }
 
-    // Transposición inteligente
     function transposeChord(chord, shift, targetArray) {
-      // Maneja acordes con barra: "C/G" -> ["C", "G"]
       const parts = chord.split('/').map(p => p.trim());
       const transposedParts = parts.map(part => {
-        // Extraer raíz y sufijo
-        // La raíz es la primera nota (puede tener # o b) seguida de posibles letras (m, 7, etc.)
-        // Buscamos la raíz más larga posible: ej. "C#m7" -> raíz "C#", sufijo "m7"
         let root = '';
         let suffix = '';
-        // Intentar con dos caracteres (sostenido o bemol)
         if (part.length >= 2) {
           const two = part.substring(0, 2);
-          // Verificar si dos primeros caracteres forman una nota válida (con # o b)
           const upperTwo = two.toUpperCase();
           if (noteMap[upperTwo] !== undefined) {
             root = two;
@@ -610,20 +637,18 @@
           }
         }
         if (!root) {
-          // Un solo caracter
           const one = part.substring(0, 1);
           const upperOne = one.toUpperCase();
           if (noteMap[upperOne] !== undefined) {
             root = one;
             suffix = part.substring(1);
           } else {
-            // No se reconoce nota, devolver parte intacta
             return part;
           }
         }
         const rootUpper = root.toUpperCase();
         const idx = noteMap[rootUpper];
-        if (idx === undefined) return part; // no debería pasar
+        if (idx === undefined) return part;
         const newIdx = (idx + shift) % 12;
         const newRoot = targetArray[newIdx];
         return newRoot + suffix;
@@ -639,12 +664,9 @@
       const targetArray = format === 'es' ? notesES : notesEN;
 
       const input = document.getElementById('chords').value;
-      // Dividir por espacios, comas o saltos de línea, pero mantener espacios para la salida
-      const tokens = input.split(/(\s+)/); // conserva espacios
+      const tokens = input.split(/(\s+)/);
       const transposedTokens = tokens.map(token => {
-        // Si es solo espacio o salto, devolverlo
         if (/^\s+$/.test(token)) return token;
-        // Intentar transponer cada token como acorde
         return transposeChord(token, shift, targetArray);
       });
       const result = transposedTokens.join('');
@@ -655,7 +677,6 @@
 
     function copyResult() {
       const output = document.getElementById('output');
-      // Obtener texto sin el botón
       const text = output.textContent.replace('Copiar', '').trim();
       navigator.clipboard.writeText(text).then(() => {
         const btn = document.getElementById('copyResultBtn');
@@ -668,7 +689,6 @@
           }, 2000);
         }
       }).catch(() => {
-        // Fallback
         const range = document.createRange();
         range.selectNode(output);
         window.getSelection().removeAllRanges();
@@ -687,8 +707,9 @@
       });
     }
 
-    // ========== AFINADOR MEJORADO ==========
+    // ========== AFINADOR MEJORADO (autocorrelación restaurada) ==========
     (function() {
+      // Definición de cuerdas para cada instrumento
       const GUITAR_STRINGS = [
         { note: 'E', freq: 82.41, label: '6ª' },
         { note: 'A', freq: 110.00, label: '5ª' },
@@ -703,6 +724,13 @@
         { note: 'A', freq: 55.00, label: '3ª' },
         { note: 'D', freq: 73.42, label: '2ª' },
         { note: 'G', freq: 98.00, label: '1ª' }
+      ];
+
+      const UKULELE_STRINGS = [
+        { note: 'G', freq: 392.00, label: '4ª' },
+        { note: 'C', freq: 261.63, label: '3ª' },
+        { note: 'E', freq: 329.63, label: '2ª' },
+        { note: 'A', freq: 440.00, label: '1ª' }
       ];
 
       let currentInstrument = 'guitar';
@@ -729,83 +757,60 @@
       const micBtn = document.getElementById('micBtn');
       const volumeFill = document.getElementById('volumeFill');
 
-      // Cargar preferencias de afinador
-      function loadTunerPrefs() {
-        try {
-          const saved = JSON.parse(localStorage.getItem('tunerPrefs'));
-          if (saved) {
-            if (saved.instrument) {
-              currentInstrument = saved.instrument;
-              currentStrings = saved.instrument === 'guitar' ? GUITAR_STRINGS : BASS_STRINGS;
-              instrumentBtns.forEach(b => b.classList.toggle('active', b.dataset.instrument === saved.instrument));
-            }
-            if (saved.mode) {
-              tuningMode = saved.mode;
-              modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === saved.mode));
-            }
-          }
-        } catch (e) {}
-      }
-      loadTunerPrefs();
+      // Almacenar últimas frecuencias para suavizado
+      let freqHistory = [];
+      const HISTORY_SIZE = 5;
 
-      function saveTunerPrefs() {
-        try {
-          localStorage.setItem('tunerPrefs', JSON.stringify({
-            instrument: currentInstrument,
-            mode: tuningMode
-          }));
-        } catch (e) {}
-      }
-
-      // Algoritmo YIN mejorado para detección de tono
-      function pitchYin(buf, sampleRate) {
-        const threshold = 0.12;
-        let size = buf.length;
+      // ===== AUTOCORRELACIÓN (versión mejorada) =====
+      function autoCorrelate(buf, sampleRate) {
+        let SIZE = buf.length;
         let rms = 0;
-        for (let i = 0; i < size; i++) rms += buf[i] * buf[i];
-        rms = Math.sqrt(rms / size);
-        if (rms < 0.005) return -1;
-
-        // Diferencia función
-        let diff = new Float32Array(size);
-        for (let tau = 0; tau < size; tau++) {
-          let sum = 0;
-          for (let i = 0; i < size - tau; i++) {
-            let d = buf[i] - buf[i + tau];
-            sum += d * d;
-          }
-          diff[tau] = sum / (size - tau);
+        for (let i = 0; i < SIZE; i++) {
+          let val = buf[i];
+          rms += val * val;
         }
+        rms = Math.sqrt(rms / SIZE);
+        // Umbral más sensible
+        if (rms < 0.008) return -1;
 
-        // Media acumulativa normalizada
-        let cmnd = new Float32Array(size);
-        cmnd[0] = 1;
-        let runningSum = 0;
-        for (let tau = 1; tau < size; tau++) {
-          runningSum += diff[tau];
-          if (runningSum === 0) { cmnd[tau] = 1; continue; }
-          cmnd[tau] = diff[tau] * tau / runningSum;
-        }
+        // Recortar para eliminar silencio
+        let r1 = 0,
+          r2 = SIZE - 1,
+          thres = 0.2;
+        for (let i = 0; i < SIZE / 2; i++)
+          if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+        for (let i = 1; i < SIZE / 2; i++)
+          if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; }
 
-        // Buscar primer tau donde cmnd < threshold
-        for (let tau = 2; tau < size; tau++) {
-          if (cmnd[tau] < threshold) {
-            // Interpolación parabólica
-            let prev = cmnd[tau - 1];
-            let curr = cmnd[tau];
-            let next = cmnd[tau + 1];
-            let a = (prev + next - 2 * curr) / 2;
-            let b = (next - prev) / 2;
-            if (a !== 0) {
-              let tau0 = tau - b / (2 * a);
-              if (tau0 > 0 && tau0 < size) {
-                return sampleRate / tau0;
-              }
-            }
-            return sampleRate / tau;
+        buf = buf.slice(r1, r2);
+        SIZE = buf.length;
+
+        let c = new Array(SIZE).fill(0);
+        for (let i = 0; i < SIZE; i++)
+          for (let j = 0; j < SIZE - i; j++)
+            c[i] = c[i] + buf[j] * buf[j + i];
+
+        let d = 0;
+        while (c[d] > c[d + 1]) d++;
+        let maxval = -1,
+          maxpos = -1;
+        for (let i = d; i < SIZE; i++) {
+          if (c[i] > maxval) {
+            maxval = c[i];
+            maxpos = i;
           }
         }
-        return -1;
+        let T0 = maxpos;
+
+        // Interpolación parabólica
+        let x1 = c[T0 - 1],
+          x2 = c[T0],
+          x3 = c[T0 + 1];
+        let a = (x1 + x3 - 2 * x2) / 2;
+        let b = (x3 - x1) / 2;
+        if (a) T0 = T0 - b / (2 * a);
+
+        return sampleRate / T0;
       }
 
       function getCents(freq, targetFreq) {
@@ -827,24 +832,43 @@
         return { string: closest, index: index };
       }
 
+      // Actualizar estado de afinación de cada cuerda
+      function updateTunedStatus(tunedIndex) {
+        document.querySelectorAll('.string-btn').forEach((btn, idx) => {
+          btn.classList.toggle('tuned', idx === tunedIndex);
+        });
+      }
+
+      function clearTunedStatus() {
+        document.querySelectorAll('.string-btn').forEach(btn => btn.classList.remove('tuned'));
+      }
+
       function updateDisplay(detectedFreq, rms) {
-        // Actualizar medidor de volumen
-        let vol = Math.min(1, rms * 8);
+        // Actualizar volumen
+        let vol = Math.min(1, rms * 6);
         volumeFill.style.width = (vol * 100) + '%';
-        volumeFill.style.background = vol > 0.7 ? '#8ab87a' : (vol > 0.3 ? '#c0c0c0' : '#5a5a5a');
+        volumeFill.style.background = vol > 0.6 ? '#8ab87a' : (vol > 0.25 ? '#c0c0c0' : '#5a5a5a');
 
         if (detectedFreq === -1 || detectedFreq < 30) {
-          // Sin señal válida
-          if (isListening) {
-            statusMsg.textContent = 'Escuchando... (señal débil)';
-          }
+          if (isListening) statusMsg.textContent = 'Escuchando... (señal débil)';
+          // Si no hay señal, no marcamos ninguna cuerda como afinada
+          clearTunedStatus();
           return;
         }
+
+        // Suavizado: agregar a historial y tomar mediana
+        freqHistory.push(detectedFreq);
+        if (freqHistory.length > HISTORY_SIZE) freqHistory.shift();
+        // Ordenar y tomar mediana
+        const sorted = [...freqHistory].sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)];
+        // Usar la mediana si hay suficientes datos, si no usar el valor actual
+        const stableFreq = freqHistory.length >= 3 ? median : detectedFreq;
 
         let targetNote, targetFreq, targetIndex;
 
         if (tuningMode === 'auto') {
-          const match = findClosestString(detectedFreq);
+          const match = findClosestString(stableFreq);
           targetNote = match.string.note;
           targetFreq = match.string.freq;
           targetIndex = match.index;
@@ -852,9 +876,10 @@
         } else {
           targetNote = currentStrings[activeStringIndex].note;
           targetFreq = currentStrings[activeStringIndex].freq;
+          targetIndex = activeStringIndex;
         }
 
-        const cents = getCents(detectedFreq, targetFreq);
+        const cents = getCents(stableFreq, targetFreq);
         const clamped = Math.min(50, Math.max(-50, cents));
         const percent = 50 + (clamped / 100) * 50;
 
@@ -864,14 +889,21 @@
         if (isTuned) {
           tunerBar.classList.add('in-tune');
           centValueEl.classList.add('in-tune');
+          // Marcar la cuerda como afinada (morado)
+          updateTunedStatus(targetIndex);
         } else {
           tunerBar.classList.remove('in-tune');
           centValueEl.classList.remove('in-tune');
+          // Si no está afinada, limpiar el estado de afinado (aunque podría mantener el resaltado activo)
+          // Pero no quitamos el resaltado activo, solo el morado
+          clearTunedStatus();
+          // Volver a poner el active (si estaba)
+          setActiveString(targetIndex, false);
         }
 
         centValueEl.textContent = (cents > 0 ? '+' : '') + cents;
         noteNameEl.textContent = targetNote;
-        noteFreqEl.textContent = detectedFreq.toFixed(1) + ' Hz';
+        noteFreqEl.textContent = stableFreq.toFixed(1) + ' Hz';
 
         if (tuningMode === 'auto') {
           statusMsg.textContent = `Cuerda ${currentStrings[targetIndex].label} (${targetNote})`;
@@ -902,13 +934,14 @@
           btn.addEventListener('click', function() {
             if (tuningMode === 'manual') {
               setActiveString(parseInt(this.dataset.index), true);
+              clearTunedStatus(); // limpiar morado al cambiar manual
             }
           });
 
           stringsContainer.appendChild(btn);
         });
-        // Re-aplicar active string
         setActiveString(activeStringIndex, false);
+        clearTunedStatus();
       }
 
       function setActiveString(index, updateText = true) {
@@ -926,6 +959,7 @@
           tunerBar.classList.remove('in-tune');
           centValueEl.classList.remove('in-tune');
           statusMsg.textContent = `Seleccionada cuerda ${str.label} (${str.note})`;
+          clearTunedStatus();
         }
       }
 
@@ -968,6 +1002,7 @@
           micBtn.classList.add('listening');
           statusMsg.textContent = 'Escuchando...';
           isListening = true;
+          freqHistory = []; // reiniciar historial
           updatePitch();
 
         } catch (err) {
@@ -978,12 +1013,11 @@
 
       function updatePitch() {
         analyser.getFloatTimeDomainData(buffer);
-        // Calcular RMS para volumen
         let rms = 0;
         for (let i = 0; i < buffer.length; i++) rms += buffer[i] * buffer[i];
         rms = Math.sqrt(rms / buffer.length);
 
-        const pitch = pitchYin(buffer, audioContext.sampleRate);
+        const pitch = autoCorrelate(buffer, audioContext.sampleRate);
 
         updateDisplay(pitch, rms);
 
@@ -1001,7 +1035,9 @@
             if (inst === currentInstrument) return;
 
             currentInstrument = inst;
-            currentStrings = inst === 'guitar' ? GUITAR_STRINGS : BASS_STRINGS;
+            if (inst === 'guitar') currentStrings = GUITAR_STRINGS;
+            else if (inst === 'bass') currentStrings = BASS_STRINGS;
+            else if (inst === 'ukulele') currentStrings = UKULELE_STRINGS;
             activeStringIndex = 0;
 
             instrumentBtns.forEach(b => b.classList.toggle('active', b === this));
@@ -1014,6 +1050,7 @@
             tunerBar.classList.remove('in-tune');
             centValueEl.classList.remove('in-tune');
             volumeFill.style.width = '0%';
+            clearTunedStatus();
             saveTunerPrefs();
           });
         });
@@ -1035,8 +1072,8 @@
               statusMsg.textContent = 'Toque la cuerda que quiere afinar';
             } else {
               statusMsg.textContent = isListening ? 'Escuchando...' : 'Pulse el botón para empezar';
-              // En auto, buscar la cuerda más cercana al detectar
             }
+            clearTunedStatus();
             saveTunerPrefs();
           });
         });
@@ -1044,7 +1081,47 @@
         micBtn.addEventListener('click', toggleMicrophone);
       }
 
+      // Cargar preferencias de afinador
+      function loadTunerPrefs() {
+        try {
+          const saved = JSON.parse(localStorage.getItem('tunerPrefs'));
+          if (saved) {
+            if (saved.instrument) {
+              currentInstrument = saved.instrument;
+              if (saved.instrument === 'guitar') currentStrings = GUITAR_STRINGS;
+              else if (saved.instrument === 'bass') currentStrings = BASS_STRINGS;
+              else if (saved.instrument === 'ukulele') currentStrings = UKULELE_STRINGS;
+              instrumentBtns.forEach(b => b.classList.toggle('active', b.dataset.instrument === saved.instrument));
+            }
+            if (saved.mode) {
+              tuningMode = saved.mode;
+              modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === saved.mode));
+            }
+          }
+        } catch (e) {}
+      }
+      loadTunerPrefs();
+
+      function saveTunerPrefs() {
+        try {
+          localStorage.setItem('tunerPrefs', JSON.stringify({
+            instrument: currentInstrument,
+            mode: tuningMode
+          }));
+        } catch (e) {}
+      }
+
+      // Inicializar después de cargar preferencias
       initTuner();
+
+      // ========== DONACIÓN ==========
+      document.getElementById('donateBtn').addEventListener('click', function() {
+        if (confirm('¿Quieres apoyar este proyecto con una donación?')) {
+          // Reemplazar con tu enlace de PayPal
+          window.open('https://www.paypal.me/simoonk', '_blank');
+        }
+      });
+
     })();
   </script>
 </body>
